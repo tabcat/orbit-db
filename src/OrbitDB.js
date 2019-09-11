@@ -379,8 +379,22 @@ class OrbitDB {
     // Save the database locally
     await this._addManifestToCache(options.cache, dbAddress)
 
+    // returns undefined, manifest.defaults, or a reduction of manifest.defaults
+    // that only includes keys specified in options.mergeDefaults
+    const defaults = manifest.defaults !== undefined && options.mergeDefaults
+      ? typeof options.mergeDefaults === 'boolean' || Array.isArray(options.mergeDefaults)
+        ? typeof options.mergeDefaults === 'boolean' && options.mergeDefaults
+          ? manifest.defaults
+          : Object.keys(manifest.defaults)
+            .reduce((acc, cur) => options.mergeDefaults.includes(cur)
+              ? Object.assign(acc, { [cur]: manifest.defaults[cur] })
+              : acc,
+            {})
+        : undefined
+      : undefined
+
     // Open the the database
-    options = Object.assign({}, options, { accessControllerAddress: manifest.accessController })
+    options = Object.assign({}, defaults, options, { accessControllerAddress: manifest.accessController })
     return this._createStore(manifest.type, dbAddress, options)
   }
 

@@ -207,6 +207,38 @@ Object.keys(testAPIs).forEach(API => {
             assert.deepEqual(db.access.write, [orbitdb.identity.id])
           })
         })
+
+        describe('Defaults', function () {
+          before(async () => {
+            if (db) {
+              await db.close()
+              await db.drop()
+            }
+          })
+
+          afterEach(async () => {
+            if (db) {
+              await db.close()
+              await db.drop()
+            }
+          })
+
+          it('creates a manifest with no defaults field', async () => {
+            db = await orbitdb.create('no-meta', 'docstore')
+            const manifest = await io.read(ipfs, db.address.root)
+            assert.deepStrictEqual(Object.keys(manifest).filter(k => k === 'defaults'), [])
+          })
+
+          it('creates a manifest with a defaults field', async () => {
+            const defaults = { indexBy: 'test' }
+            db = await orbitdb.create('fourth', 'docstore', {
+              mergeDefaults: true,
+              defaults
+            })
+            await db.put({ test: 123 })
+            assert.deepStrictEqual(db.options.defaults, defaults)
+          })
+        })
       })
     })
 
@@ -304,6 +336,56 @@ Object.keys(testAPIs).forEach(API => {
         db = await orbitdb.open('abc', { create: true, type: 'feed', overwrite: true })
         assert.equal(db.access.write.length, 1)
         assert.equal(db.access.write[0], db.identity.id)
+      })
+
+      it('opens a database with defaults option excluded in manifest', async () => {
+        db = await orbitdb.open('abc',
+          { create: true, type: 'docstore', overwrite: true })
+        db = await orbitdb.open(db.address, { mergeDefaults: true })
+        try {
+          db.put({ test: 123 })
+          throw new Error('should have thrown')
+        } catch (e) {
+          assert.strictEqual(e.message, `The provided document doesn't contain field '_id'`)
+        }
+      })
+
+      it('opens a database with defaults option included in manifest, mergeDefaults false', async () => {
+        db = await orbitdb.open('abc',
+          { create: true, type: 'docstore', overwrite: true, defaults: { indexBy: 'test' } })
+        db = await orbitdb.open(db.address, { mergeDefaults: false })
+        try {
+          db.put({ test: 123 })
+          throw new Error('should have thrown')
+        } catch (e) {
+          assert.strictEqual(e.message, `The provided document doesn't contain field '_id'`)
+        }
+      })
+
+      it('opens a database with defaults option included in manifest, mergeDefaults true', async () => {
+        db = await orbitdb.open('abc',
+          { create: true, type: 'docstore', overwrite: true, defaults: { indexBy: 'test' } })
+        db = await orbitdb.open(db.address, { mergeDefaults: true })
+        await db.put({ test: 123 })
+      })
+
+      it('opens a database with defaults option included in manifest, mergeDefaults array ', async () => {
+        db = await orbitdb.open('abc',
+          { create: true, type: 'docstore', overwrite: true, defaults: { indexBy: 'test' } })
+        db = await orbitdb.open(db.address, { mergeDefaults: ['indexBy'] })
+        await db.put({ test: 123 })
+      })
+
+      it('opens a database with defaults option included in manifest, mergeDefaults empty array', async () => {
+        db = await orbitdb.open('abc',
+          { create: true, type: 'docstore', overwrite: true, defaults: { indexBy: 'test' } })
+        db = await orbitdb.open(db.address, { mergeDefaults: [] })
+        try {
+          db.put({ test: 123 })
+          throw new Error('should have thrown')
+        } catch (e) {
+          assert.strictEqual(e.message, `The provided document doesn't contain field '_id'`)
+        }
       })
 
       it('doesn\'t open a database if we don\'t have it locally', async () => {
