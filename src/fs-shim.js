@@ -1,17 +1,7 @@
 /* eslint-disable */
-// adapted from https://github.com/cheton/is-electron - (c) Cheton Wu
-const isElectron = () => {
-  if (typeof window !== 'undefined' && typeof window.process === 'object') {
-    return true
-  }
+const isElectron = require('is-electron')
+const isNode = require('is-node')
 
-  if (typeof process !== 'undefined' && typeof process.versions === 'object' && !!process.versions.electron) {
-    return true
-  }
-
-  return false
-}
-
-const fs = (!isElectron() && (typeof window === 'object' || typeof self === 'object')) ? null : eval('require("fs")')
+const fs = (isElectron() || isNode) ? eval('require("fs")') : null
 
 module.exports = fs
