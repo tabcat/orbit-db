@@ -54,7 +54,7 @@
     "mkdirp": "^1.0.4",
     "mocha": "^8.1.1",
     "open-cli": "^6.0.1",
-    "orbit-db-test-utils": "^0.12.0",
+    "orbit-db-test-utils": "^1.0.1",
     "p-each-series": "^2.1.0",
     "p-map": "^4.0.0",
     "p-map-series": "^2.1.0",
@@ -67,7 +67,11 @@
     "standard": "^14.3.4",
     "validate-maintainers": "^1.2.2",
     "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10"
+    "webpack-cli": "^3.3.10",
+    "ipfs": "^0.52.0",
+    "ipfs-http-client": "~48.1.0",
+    "ipfsd-ctl": "^7.1.0",
+    "go-ipfs": "^0.7.0"
   },
   "scripts": {
     "examples:eventlog": "node examples/eventlog.js",
