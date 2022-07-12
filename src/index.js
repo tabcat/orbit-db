@@ -10,13 +10,13 @@ import { Entry } from './entry/index.js'
 import { Identity } from './identity/index.js'
 import { KeyValue } from './store/keyvalue.js'
 
-ODB.Storage = LevelDatastore
-ODB.Keychain = KeyChain
-ODB.Replicator = Replicator
-
 ODB.registry.access.add(StaticAccess)
 ODB.registry.entry.add(Entry)
 ODB.registry.identity.add(Identity)
 ODB.registry.store.add(KeyValue)
+
+ODB.Storage = LevelDatastore
+ODB.Keychain = KeyChain
+ODB.Replicator = Replicator
 
 export const OrbitDB = ODB

@@ -5,11 +5,12 @@ import { CID } from 'multiformats/cid'
 import { base32 } from 'multiformats/bases/base32'
 import { compare } from 'uint8arrays/compare'
 
-const sortEntries = (e1, e2) => compare(e1.cid.bytes, e2.cid.bytes)
+import { traverser } from './traverser.js'
 
 export class Replica {
-  constructor ({ manifest, blocks, Entry, Identity, graph }) {
+  constructor ({ manifest, storage, blocks, Entry, Identity, graph }) {
     this.manifest = manifest
+    this.storage = storage
     this.blocks = blocks
     this.Entry = Entry
     this.Identity = Identity
@@ -17,10 +18,12 @@ export class Replica {
     this._graph = graph
   }
 
-  static async open ({ manifest, blocks, Entry, Identity, storage }) {
+  static async open ({ manifest, createStorage, blocks, Entry, Identity }) {
+    const storage = createStorage('replica')
+    await storage.open()
     const graph = Graph.initGraph()
 
-    return new Replica({ manifest, blocks, Entry, Identity, storage, graph })
+    return new Replica({ manifest, storage, blocks, Entry, Identity, storage, graph })
   }
 
   async close () {
@@ -35,43 +38,55 @@ export class Replica {
   get missing () { return Graph.missing(this._graph) }
   get denied () { return Graph.denied(this._graph) }
 
-  static traverse ({ blocks, heads, tails, missing, denied, Entry, Identity }) {
+  traverse ({ direction } = { direction: 'descend' }) {
     const seen = new Set()
-    const skip = (cid) => seen.has(cid) || missing.has(cid) || denied.has(cid)
 
-    async function * process (queue) {
-      queue.sort(sortEntries)
-      const nexts = new Set()
+    const graph = Graph.clone(this._graph)
+    const headsAndTails = [Graph.heads(graph), Graph.tails(graph)]
 
-      for await (const cid of queue) {
-        const entry = await Entry.fetch({
-          blocks,
-          Identity,
-          cid: CID.parse(cid, base32)
-        })
+    let edge
+    if (direction !== 'descend') {
+      edge = 'out'
+    } else if (direction === 'ascend') {
+      // heads and tails are switched if traversal is ascending
+      // headsAndTails.reverse()
+      // edge = 'in'
+    }
+    // todo: less wordy way to assign heads and tails from direction
+    const [heads, tails] = headsAndTails
 
-        entry.next.forEach(cid => nexts.add(cid.toString(base32)))
-        yield entry
+    async function links ({ cid, entry }) {
+      if (entry) {
+        cid = entry.cid
+      }
+      const str = cid.toString(base32)
+
+      // do not traverse past the tails
+      if (Graph.tails.has(str)) {
+        return []
       }
 
-      const nextQueue = Array.from(nexts).filter(skip)
-      if (nextQueue.length) yield * process(nextQueue)
+      const adjacents = Graph.getNode(graph, str)[edge]
+      const cids = []
+      for (const str of adjacents) {
+        if (seen.has(str)) { return }
+
+        seen.add(str)
+        cids.push(CID.parse(str))
+      }
+
+      return cids
     }
 
-    return process(Array.from(heads))
-  }
+    // todo: prefetch and cache entry.refs
+    async function load (cid) {
+      return Entry.fetch({ blocks, cid, Identity })
+    }
 
-  traverse () {
-    const graph = Graph.cloneGraph(this._graph)
-
-    return Replica.traverse({
-      blocks: this.blocks,
-      Entry: this.Entry,
-      Identity: this.Identity,
-      heads: Graph.heads(graph),
-      tails: Graph.tails(graph),
-      missing: Graph.missing(graph),
-      denied: Graph.denied(graph)
+    return traverser({
+      cids: Array.from(heads).map(CID.parse)
+      links,
+      load
     })
   }
 

@@ -35,6 +35,7 @@ export class OrbitDB {
     this.keychain = config.keychain
 
     this.blocks = config.blocks
+    this.peerId = config.peerId
     this.pubsub = config.pubsub
 
     this.events = new EventEmitter()
@@ -57,19 +58,20 @@ export class OrbitDB {
       directory,
       storageOps: options.storageOps || storageOps,
       offline: options.offline === true,
-      blocks: options.blocks ?? options.ipfs.block,
+      blocks: options.blocks || options.ipfs.block,
+      // peerId and pubsub is not required
+      peerId: options.peerId || null,
       pubsub: options.pubsub ?? options.ipfs.pubsub
     }
 
     const defaultStorage = location => new this.Storage(location, storageOps)
-    const defaultIdentities = () => defaultStorage(dirs(directory).identities)
     const defaultKeychain = (storage) => new this.Keychain({ getDatastore: () => storage })
     const defaultIdentity = () => this.registry.identity.star
 
     if (options.identity) {
       config.identity = options.identity
     } else {
-      config.identities = defaultIdentities()
+      config.identities = defaultStorage(dirs(directory).identities)
       config.keychain = defaultKeychain(defaultStorage(dirs(directory).keychain))
 
       await config.identities.open()
@@ -127,7 +129,8 @@ export class OrbitDB {
       identities: {
         type: this.registry.identity.star.type
       },
-      ...options
+      ...Object.keys(this.registry).filter(key => options[key]).reduce(
+      ...options.meta ? options.meta : {}
     }
 
     const manifest = await Manifest.create(name, opts)
@@ -155,30 +158,38 @@ export class OrbitDB {
 
     const isOpen = this.opened[address] || this._opening[address]
     if (isOpen) {
-      throw new Error(`database ${address} is already open`)
+      throw new Error(`database ${address} is already open or being opened`)
     }
 
+    const components = Manifest.getComponents(this.registry, manifest)
+
+    // this will return a duplicate instance of the identity (not epic) until the instances cache is used in Identity.get
+    const identity = options.identity || await components.Identity.get({
+      name: 'default',
+      identities: this.identities,
+      keychain: this.keychain
+    })
+    
     const Storage = options.Storage || OrbitDB.Storage
     const Replicator = options.Replicator || OrbitDB.Replicator
 
-    async function _open (manifest, options = {}) {
-      const location = path.join(this.dirs.databases, manifest.address.cid)
-      const createStorage = name => new Storage(path.join(location, name), this.storageOps)
+    const location = path.join(this.dirs.databases, manifest.address.cid)
+    const createStorage = name => new Storage(path.join(location, name), this.storageOps)
 
-      return Database.open({
-        orbitdb: this, // passed for access controllers if they need to make another database
-        manifest,
-        blocks: this.blocks,
-        pubsub: this.pubsub,
-        identity: this.identity,
-        Replicator,
-        createStorage,
-        options,
-        ...Manifest.getComponents(this.registry, manifest)
-      })
-    }
+    const _open = async (manifest, options = {}) => Database.open({
+      orbitdb: this, // passed for access controllers if they need to make another database
+      manifest,
+      blocks: this.blocks,
+      peerId: this.peerId,
+      pubsub: this.pubsub,
+      identity,
+      replicator,
+      createStorage,
+      options,
+      ...Manifest.getComponents(this.registry, manifest)
+    })
 
-    this._opening[address] = _open(address, options).bind(this)
+    this._opening[address] = _open(address, options)
       .then(db => {
         this.opened[address] = db
         delete this._opening[address]
@@ -188,6 +199,10 @@ export class OrbitDB {
           delete this.opened[address]
         })
         return db
+      })
+      .catch(e => {
+        console.error(e)
+        throw new Error(`failed opening database with address: ${address}`)
       })
 
     return this._opening[address]

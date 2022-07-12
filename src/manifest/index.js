@@ -78,9 +78,15 @@ export class Manifest {
     return new Address(this.block.cid)
   }
 
+  // for future backward compatibility
   get pathkey () {
-    return this.address.toString() +
-      this.version ? null : `/${this.name}`
+    let pathkey = this.address.toString()
+
+    if (!this.version) {
+      pathkey = pathkey + `/${this.name}`
+    }
+
+    return pathkey
   }
 
   get getTag () {

@@ -5,9 +5,12 @@ import * as codec from '@ipld/dag-cbor'
 import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import { keys } from 'libp2p-crypto'
 
+const type = 'based'
 const secp256k1 = 'secp256k1'
 const empty = ''
 
+// todo: have get return from instances cache and safely check for password
+// const instances = new WeakMap()
 const privs = new WeakMap()
 
 export class Identity {
@@ -19,8 +22,11 @@ export class Identity {
     if (priv) privs.set(this, priv)
   }
 
-  static async get ({ name, identities, keychain }) {
-    const key = new Key(name)
+  static get type () { return type }
+  get type () { return type }
+
+  static async get ({ name, identities, keychain, password = empty }) {
+    const key = Key.withNamespaces([this.type, name])
     const exists = await identities.has(key)
 
     if (!exists) {
@@ -36,14 +42,14 @@ export class Identity {
 
       await identities.put(key, block)
 
-      const pem = await keypair.export(empty)
-      await keychain.importKey(block.cid.toString(), pem, empty)
+      const pem = await keypair.export(password)
+      await keychain.importKey(block.cid.toString(), pem, password)
     }
 
     const bytes = await identities.get(key)
     const block = await Block.decode({ bytes, codec, hasher })
     const pem = await keychain.findKeyByName(block.cid.toString())
-    const keypair = await keys.import(pem, empty)
+    const keypair = await keys.import(pem, password)
 
     return new Identity({
       name,

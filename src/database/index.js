@@ -7,18 +7,19 @@ export class Database {
     this.storage = config.storage
     this.blocks = config.blocks
     this.options = config.options
+    this.identity = config.identity
 
     this.replica = config.replica
     this.replicator = config.replicator
 
     this.manifest = config.manifest
-    this.identity = config.identity
-    this.access = config.access
     this.store = config.store
+    this.access = config.access
     this.Entry = config.Entry
     this.Identity = config.Identity
 
     // expose actions as database write methods (e.g. database.put)
+    // todo: handle async action creators
     Object.defineProperties(this, Object.fromEntries(
       Object.entries(this.store.actions)
         .map(([key, action]) =>
@@ -30,7 +31,7 @@ export class Database {
     Object.defineProperties(this, Object.fromEntries(
       Object.entries(this.store.selectors)
         .map(([key, selector]) =>
-          [key, { value: (...pass) => selector(this.store.state)(...pass) }])
+          [key, { value: selector(this.store.state) }])
     ))
 
     this.events = new EventEmitter()
@@ -39,16 +40,31 @@ export class Database {
   }
 
   static async open (config) {
-    const { orbitdb, manifest, Store, Access, Replicator, createStorage, blocks, Identity } = config
+    const {
+      orbitdb,
+      identity,
+      manifest,
+      Store,
+      Access,
+      Replicator,
+      createStorage,
+      blocks,
+      Identity,
+      peerId,
+      pubsub
+    } = config
 
-    const storage = config.storage = createStorage()
-    await storage.open()
+    if (identity.type !== Identity.type) {
+      throw new Error('identity instance type does not match Identity class')
+    }
 
-    const access = config.access = await Access.open({ orbitdb, manifest, blocks, Identity })
-    const replica = config.replica = await Replica.open({ manifest, storage, blocks, access })
+    const common = { manifest, createStorage, blocks }
 
-    config.store = await Store.open({ manifest, access, blocks, replica })
-    config.replicator = await Replicator.open({ manifest, access, blocks, replica })
+    const access = config.access = await Access.open({ ...common, orbitdb, Identity })
+    const replica = config.replica = await Replica.open({ ...common, access })
+
+    config.store = await Store.open({ ...common, access, replica })
+    config.replicator = await Replicator.open({ ...common, access, replica, peerId, pubsub })
 
     const database = new Database(config)
 
@@ -57,7 +73,6 @@ export class Database {
       replicatorReplicate: () => database.events.emit('replicate'),
       replicaWrite: () => database.events.emit('write')
     }
-
     database.store.events.on('update', database._handlers.storeUpdate)
     database.replicator.events.on('replicate', database._handlers.replicatorReplicate)
     database.replica.events.on('write', database._handlers.replicaWrite)
@@ -75,13 +90,17 @@ export class Database {
     this.replicator.events.removeListener('replicate', this._handlers.replicatorReplicate)
     this.replica.events.removeListener('write', this._handlers.replicaWrite)
 
-    await Promise.all([
-      this.replicator.close(),
-      this.store.close(),
-      this.replica.close(),
-      this.access.close()
-    ])
-    await this.storage.close()
+    await this.replicatior.close()
+    await this.store.close()
+    await this.replica.close()
+    await this.access.close()
+
+    // await Promise.all([
+    //   this.replicator.close(),
+    //   this.store.close(),
+    //   this.replica.close(),
+    //   this.access.close()
+    // ])
 
     this.events.emit('close')
   }

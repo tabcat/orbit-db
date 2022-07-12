@@ -4,6 +4,8 @@ import * as codec from '@ipld/dag-cbor'
 import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import * as uint8Arrays from 'uint8arrays'
 
+const type = 'based'
+
 export class Entry {
   constructor ({ block, data, identity }) {
     this.block = block
@@ -18,6 +20,9 @@ export class Entry {
       )
     })
   }
+
+  static get type () { return type }
+  get type () { return type }
 
   static async create ({ identity, tag, clock, payload, next, refs }) {
     const data = await Block.encode({

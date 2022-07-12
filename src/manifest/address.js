@@ -48,13 +48,13 @@ export class Address {
     return prefix + this.cid.toString(base)
   }
 
-//  static fromBytes (bytes) {
-//    return new Address(CID.decode(bytes))
-//  }
-//
-//  toBytes () {
-//    return this.cid.bytes
-//  }
+  // static fromBytes (bytes) {
+  //   return new Address(CID.decode(bytes))
+  // }
+  //
+  // toBytes () {
+  //   return this.cid.bytes
+  // }
 
   equals (address) {
     address = Address.asAddress(address, true)
