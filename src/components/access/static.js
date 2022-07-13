@@ -5,7 +5,7 @@ import { wildcard } from './util.js'
 
 const type = 'static'
 
-export class Access {
+export class StaticAccess {
   constructor ({ manifest, Identity, blocks }) {
     this.manifest = manifest
     this.Identity = Identity

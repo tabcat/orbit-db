@@ -4,7 +4,7 @@ import * as codec from '@ipld/dag-cbor'
 import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import { CID } from 'multiformats/cid'
 import { base32 } from 'multiformats/bases/base32'
-import { traverser } from '../traversal.js'
+import { traverser } from '../database/traversal.js'
 
 export class Replicator {
   constructor ({ blocks, pubsub, manifest, replica, access, Entry, Identity }) {

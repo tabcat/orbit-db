@@ -26,9 +26,9 @@ export class Register {
   }
 
   add (component, star = !Object.keys(this.registered).length) {
-    if (!component.type.startsWith(this.namespace)) {
-      throw errors.namespaceMismatch(this.namespace, component.type)
-    }
+    // if (!component.type.startsWith(this.namespace)) {
+    //   throw errors.namespaceMismatch(this.namespace, component.type)
+    // }
 
     if (this.registered[component.type]) {
       throw errors.typeRegistered(component.type)
