@@ -8,7 +8,7 @@ import * as version from './version.js'
 import { Manifest, Address } from './manifest/index.js'
 import { Register } from './register.js'
 import { Database } from './database.js'
-import { ORBITDB_LOWER } from './contants.js'
+import { ORBITDB_LOWER } from './constants.js'
 
 const registry = Object.fromEntries([
   'store',
