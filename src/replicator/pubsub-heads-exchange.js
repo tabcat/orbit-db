@@ -11,62 +11,40 @@ export class PubsubHeadsExchange {
     this.access = access
 
     this.topic = base32.encode(manifest.getTag())
-    this._common = null
-    this._directs = new Set()
+    this._common = monitor(this.pubsub, this.topic)
+    this._directs = new Map()
   }
 
   async start () {
-    await this.pubsub.subscribe(this.topic, this._onReceivedBroadcast)
-    await this.broadcast(this.replica.heads)
+    await this._common.start()
+    this._common.on('peer-join', this._onPeerJoin) // join the direct channel topic for that peer and wait for them to join
+    this._common.on('peer-leave', this._onPeerLeave) // if a peer leaves and the direct connection is closed then delete the direct
   }
 
   async stop () {
-    await this.pubsub.unsubscribe(this.topic, this._onReceivedBroadcast)
+    for (const direct of this._directs) {
+      await direct.close()
+    }
+
+    this._common.removeListener('peer-join', this._onPeerJoin)
+    this._common.removeListener('peer-leave', this._onPeerLeave)
+    await this._common.close()
   }
 
   async broadcast (heads) {
     const block = await Block.encode({ value: Array.from(heads), codec, hasher })
-    await this.pubsub.publish(this.topic, block.bytes)
+    for (const direct of this.directs) {
+      if (direct.open) {
+        this.pubsub.publish(direct.topic, block.bytes)
+      }
+    }
   }
 
-  async _onReceivedBroadcast ({ data: bytes }) {
-    const block = await Block.decode({ bytes, codec, hasher })
-    const heads = new Set(block.value.map(cid => cid.toString(base32)))
+  this._onPeerJoin (peerId) {
+    
+  }
 
-    // find new heads if any
-    const novel = new Set()
-    for (const cid of heads) {
-      const str = cid.toString(base32)
-      if (!this.replica.known(str)) novel.add(str)
-    }
+  this._onPeerLeave (peerId) {
 
-    if (novel.size) {
-
-    // if ahead of peer then we advertise heads
-    const ahead = !Array.from(this.replica.heads
-    // const novel = new Set()
-    // for (const cid of heads) {
-    //   if (!this.replica.known(cid)) novel.add(cid)
-    // }
-    //
-    // const ahead = !Array.from(this.replica.heads).every(heads.has.bind(heads))
-    // if (!novel.size && ahead) {
-    //   return this.broadcase(this.replica.heads)
-    // }
-    //
-    // const seen = new Set()
-    //
-    // // todo: generalize Replica.traverse to be used here
-    // async function * traverse (queue) {
-    //   const entries = await Promise.all(
-    //     Array.from(queue)
-    //       .map(cid => this.block.get(CID.parse(cid, base32)))
-    //   )
-    // 
-    //
-    // }
-    //
-    // return replica.add(traverse(Array.from(heads)))
-    console.log(heads) // todo: replicate
   }
 }
