@@ -3,7 +3,7 @@ import * as Block from 'multiformats/block'
 import * as codec from '@ipld/dag-cbor'
 import { sha256 as hasher } from 'multiformats/hashes/sha2'
 
-import { Address as AddressImport } from './address'
+import { Address as AddressImport } from './address.js'
 export const Address = AddressImport
 // import * as v0 from './v0'
 // import * as v1 from './v1'

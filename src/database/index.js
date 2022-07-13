@@ -1,6 +1,6 @@
 
 import EventEmitter from 'events'
-import Replica from './replica.js'
+import { Replica } from './replica.js'
 
 export class Database {
   constructor (config) {

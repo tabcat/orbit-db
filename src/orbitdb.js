@@ -7,15 +7,16 @@ import makedir from 'make-dir'
 import * as version from './version.js'
 import { Manifest, Address } from './manifest/index.js'
 import { Register } from './register.js'
-import { Database } from './database.js'
-import { ORBITDB_LOWER } from './constants.js'
+import { Database } from './database/index.js'
+import { ORBIT_DB_LOWER } from './constants.js'
 
 const registry = Object.fromEntries([
   'store',
   'access',
   'entry',
   'identity'
-].map(k => [k, new Register(`/${ORBITDB_LOWER}/${k}`)]))
+].map(k => [k, new Register(`/${ORBIT_DB_LOWER}/${k}`)]))
+
 const dirs = root => Object.fromEntries([
   'databases',
   'identities',
@@ -95,9 +96,10 @@ export class OrbitDB {
   get registry () { return registry }
 
   // modules assigned in src/index.js
-  static get Storage () { throw new Error('Storage module was never assigned') }
-  static get Keychain () { throw new Error('Keychain module was never assigned') }
-  static get Replicator () { throw new Error('Replicator module was never assigned') }
+  // Note: these should be static or as close to as possible... prototype?
+  get Storage () { throw new Error('Storage module was never assigned') }
+  get Keychain () { throw new Error('Keychain module was never assigned') }
+  get Replicator () { throw new Error('Replicator module was never assigned') }
 
   async stop () {
     await Promise.all(Object.values(this._opening))
@@ -130,7 +132,7 @@ export class OrbitDB {
         type: this.registry.identity.star.type
       },
       ...Object.keys(this.registry).filter(key => options[key]).reduce(
-      ...options.meta ? options.meta : {}
+        ...options.meta ? options.meta : {})
     }
 
     const manifest = await Manifest.create(name, opts)
@@ -169,7 +171,7 @@ export class OrbitDB {
       identities: this.identities,
       keychain: this.keychain
     })
-    
+
     const Storage = options.Storage || OrbitDB.Storage
     const Replicator = options.Replicator || OrbitDB.Replicator
 

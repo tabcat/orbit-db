@@ -1,11 +1,11 @@
 
-import Graph from './graph.js'
+import * as Graph from './graph.js'
 // import EventEmitter from 'events'
 import { CID } from 'multiformats/cid'
 import { base32 } from 'multiformats/bases/base32'
 import { compare } from 'uint8arrays/compare'
 
-import { traverser } from './traverser.js'
+import { traverser } from './traversal.js'
 
 export class Replica {
   constructor ({ manifest, storage, blocks, Entry, Identity, graph }) {
@@ -84,7 +84,7 @@ export class Replica {
     }
 
     return traverser({
-      cids: Array.from(heads).map(CID.parse)
+      cids: Array.from(heads).map(CID.parse),
       links,
       load
     })
