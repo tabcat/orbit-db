@@ -185,7 +185,7 @@ export class OrbitDB {
       peerId: this.peerId,
       pubsub: this.pubsub,
       identity,
-      replicator,
+      Replicator,
       createStorage,
       options,
       ...Manifest.getComponents(this.registry, manifest)
@@ -197,8 +197,8 @@ export class OrbitDB {
         delete this._opening[address]
         this.events.emit('opened', db)
         db.events.once('closed', () => {
-          this.events.emit('closed', db)
           delete this.opened[address]
+          this.events.emit('closed', db)
         })
         return db
       })
