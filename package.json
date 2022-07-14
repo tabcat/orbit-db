@@ -76,6 +76,7 @@
     "peer-to-peer"
   ],
   "dependencies": {
+    "localstorage-level-migration": "^0.1.0",
     "uint8arrays": "^3.0.0"
   }
 }
