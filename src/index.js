@@ -2,7 +2,7 @@
 import { OrbitDB } from './orbitdb.js'
 
 import { LevelDatastore } from 'datastore-level'
-// import { KeyChain } from 'libp2p/src/keychain/index.js'
+import { KeyChain } from './keychain/code/index.js'
 import { Replicator } from './replicator/index.js'
 
 import { StaticAccess } from './components/access/static.js'
@@ -18,7 +18,7 @@ OrbitDB.registry.identity.add(Identity)
 OrbitDB.registry.store.add(KeyValue)
 
 OrbitDB.Storage = LevelDatastore
-// OrbitDB.Keychain = KeyChain
+OrbitDB.Keychain = KeyChain
 OrbitDB.Replicator = Replicator
 
 // Backwards Compatability
