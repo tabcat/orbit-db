@@ -5,6 +5,9 @@ import { sha256 as hasher } from 'multiformats/hashes/sha2'
 import { base32 } from 'multiformats/bases/base32'
 import { Monitor } from './pubsub/monitor.js'
 import { Direct } from './pubsub/direct.js'
+import { traverser } from '../database/traversal.js'
+
+const timeout = 30000
 
 export class PubsubHeadsExchange {
   constructor ({ manifest, peerId, pubsub, blocks, Entry, Identity, replica, access }) {
@@ -71,12 +74,23 @@ export class PubsubHeadsExchange {
     return false
   }
 
+  _onHeadsMessage (msg) {
+    const { data: bytes } = msg
+    const { value: cids } = await Block.decode({ bytes, codec, hasher })
+
+    const { blocks, Identity } = this
+    const load = (cid) => this.Entry.fetch({ blocks, Identity, cid, timeout }).catch(() => null)
+    const links = ({ entry }) => entry.next
+
+    this.replica.add(traverser({ cids, load, links }))
+  }
+
   // may need to queue _onPeer* so start and stop arent called concurrently, or check for that in Direct
 
   _onPeerJoin (remotePeerId) {
     const direct = Direct(this.pubsub, this.peerId, remotePeerId)
     this.directs.set(remotePeerId, direct)
-    direct.start()
+    direct.start().then(() => direct.subscribe(this._onHeadsMessage))
   }
 
   _onPeerLeave (remotePeerId) {

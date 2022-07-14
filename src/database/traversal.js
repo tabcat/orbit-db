@@ -30,9 +30,9 @@ export const sortEntries = (e1, e2) => {
 export function traverser ({
   cids, // array of CID
   load, // load function takes a cid and returns an entry or null
-  links, // links function takes an entry or cid and returns an array of cid
+  links, // links function takes an object containing an entry or cid and returns an array of cid
   ordered, // entries are yielded in order; not needed for replication traversal
-  sortFn, // entry sorting function takes 2 entries and returns -1, 0 or +1
+  sortFn, // entry sorting function takes 2 entries and returns -1, 0 or +1, ordered must be true
   signal // abort signal https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal
 }) {
   ordered = ordered || true
@@ -40,9 +40,12 @@ export function traverser ({
 
   const source = pushable()
 
-  const order = cids => ordered ? walk(cids) : cids.forEach(cid => walk([cid]))
+  // const order = cids => ordered ? walk(cids) : cids.forEach(cid => walk([cid]))
 
   async function walk (cids) {
+    // trivial abort for now; later pass abort to load function
+    if (signal.aborted) { return }
+
     const entries = await Promise.all(cids.map(load))
       .then(entries => entries
         .filter(Boolean) // eliminate null load returns
@@ -56,10 +59,14 @@ export function traverser ({
       .sort(sortCids)
 
     if (nexts.length) {
-      order(nexts)
+      // order(nexts)
+      return walk(nexts)
     }
   }
 
-  order(cids) // todo: eliminate order function, move logic into walk
+  // no parallel traversal for now
+  walk(cids).then(() => source.end())
+  // order(cids).then(() => source.end()) // todo: eliminate order function, move logic into walk
+
   return source
 }
