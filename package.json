@@ -23,6 +23,7 @@
     "ganache-cli": "^6.12.2",
     "mocha": "^10.0.0",
     "orbit-db-access-controllers": "^0.3.2",
+    "orbit-db-docstore": "^1.12.0",
     "orbit-db-identity-provider": "^0.4.0",
     "orbit-db-io": "^1.0.2",
     "orbit-db-test-utils": "^1.4.1",
