@@ -6,10 +6,11 @@ const peerLeave = 'peer-leave'
 const update = 'update'
 
 export class Monitor {
-  constructor (pubsub, topic) { 
+  constructor (pubsub, topic) {
     this.pubsub = pubsub
     this.topic = topic
     this.peers = new Set()
+    this.events = new EventEmitter()
     this._controller = null
   }
 
@@ -17,19 +18,19 @@ export class Monitor {
     this._controller = new AbortController()
 
     // re-call _poll
-    const recall = () => {
+    const recall = async () => {
       if (this._controller.signal.aborted) {
         return
       }
 
       await this._poll()
-      
+
       setTimeout(interval, recall)
     }
     recall()
 
-    this.events.on(peerJoin, () => this.events.emit('update'))
-    this.events.on(peerLeave, () => this.events.emit('update'))
+    this.events.on(peerJoin, () => this.events.emit(update))
+    this.events.on(peerLeave, () => this.events.emit(update))
   }
 
   async stop () {

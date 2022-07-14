@@ -1,25 +1,17 @@
 
-import * as Block from 'multiformats/block'
-import * as codec from '@ipld/dag-cbor'
-import { sha256 as hasher } from 'multiformats/hashes/sha2'
-import { CID } from 'multiformats/cid'
-import { base32 } from 'multiformats/bases/base32'
-import { traverser } from '../database/traversal.js'
+import { PubsubHeadsExchange } from './pubsub-heads-exchange.js'
 
 export class Replicator {
-  constructor ({ blocks, pubsub, manifest, replica, access, Entry, Identity }) {
-    this.blocks = blocks
-    this.pubsub = pubsub
-    this.manifest = manifest
-    this.replica = replica
-    this.access = access
-    this.Entry = Entry
-    this.Identity = Identity
+  constructor (config, modules) {
+    this.config = config
+    this.modules = modules
   }
 
-  static async create ({ blocks, pubsub, manifest, replica, access, Entry, Identity }) {
-    const replicator = new Replicator({ blocks, pubsub, topic, manifest, replica, access, Entry, Identity })
-    await replicator.start()
+  // config structure: { peerId, manifest, blocks, pubsub, replica, access, Entry, Identity }
+  static async create (config) {
+    const modules = Replicator.modules.map(Module => new Module(config))
+
+    const replicator = new Replicator(config, modules)
 
     return replicator
   }
@@ -28,6 +20,17 @@ export class Replicator {
     await this.stop()
   }
 
-  async start () {}
-  async stop () {}
+  async start () {
+    await Promise.all(this.modules.map(module => module.start()))
+  }
+
+  async stop () {
+    await Promise.all(this.modules.map(module => module.stop()))
+  }
+
+  static modules () {
+    return [
+      PubsubHeadsExchange
+    ]
+  }
 }

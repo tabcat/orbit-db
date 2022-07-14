@@ -1,41 +1,38 @@
 
 import EventEmitter from 'events'
-import Monitor from './monitor.js'
+import { Monitor } from './monitor.js'
 
 const prefix = 'psd/v1'
 const version = 'v1'
 
 function sortAlphabetical (a, b) {
-  const nameA = a.name.toUpperCase(); // ignore upper and lowercase
-  const nameB = b.name.toUpperCase(); // ignore upper and lowercase
+  const nameA = a.name.toUpperCase() // ignore upper and lowercase
+  const nameB = b.name.toUpperCase() // ignore upper and lowercase
   if (nameA < nameB) {
-    return -1;
+    return -1
   }
 
   if (nameA > nameB) {
-    return 1;
+    return 1
   }
 
   // names must be equal
-  return 0;
-}
-
-const refresh = () => {
-  self.open = monitor.peers.has(remotePeerId)
+  return 0
 }
 
 export class Direct {
-  constructor (pubsub, localPeerId, remotePeerId, onMessage) {
+  constructor (pubsub, localPeerId, remotePeerId) {
     this.pubsub = pubsub
     this.localPeerId = localPeerId
     this.remotePeerId = remotePeerId
     this.topic = Direct.directTopic(localPeerId, remotePeerId)
 
-    this._onMessage = onMessage
-
     this.events = new EventEmitter()
     this.monitor = new Monitor(pubsub, this.topic)
-    this.open = null
+
+    this.handlerMap = new WeakMap()
+    this._handlers = [] // exists just so we can still clean up subscriptions
+    this.open = false
   }
 
   static directTopic (localPeerId, remotePeerId) {
@@ -44,7 +41,10 @@ export class Direct {
   }
 
   async start (interval) {
-    await this.pubsub.subscribe(this.topic, this._onMessage)
+    for (const _handler of this._handlers) {
+      await this.pubsub.subscribe(this.topic, _handler)
+    }
+
     await this.monitor.start(interval)
 
     const refresh = () => {
@@ -56,7 +56,10 @@ export class Direct {
   }
 
   async stop () {
-    await this.pubsub.unsubscribe(this.topic, this._onMessage)
+    for (const _handler of this._handlers) {
+      await this.pubsub.unsubscribe(this.topic, _handler)
+    }
+
     await this.monitor.stop()
 
     this.open = false
@@ -67,6 +70,24 @@ export class Direct {
       throw new Error('direct pubsub not open')
     }
 
-    await this.pubsub.publish(this.topic, data)
+    return this.pubsub.publish(this.topic, data)
+  }
+
+  async subscribe (handler) {
+    if (!this.open) {
+      throw new Error('direct pubsub not open')
+    }
+
+    const _handler = (msg) => msg.from === this.remotePeerId && handler(msg)
+    this.handlerMap.set(handler, _handler)
+
+    return this.pubsub.subscribe(this.topic, _handler)
+  }
+
+  async unsubscribe (handler) {
+    const _handler = this._handlers.get(handler)
+    this.handlerMap.delete(handler)
+
+    return this.pubsub.unsubscribe(this.topic, _handler)
   }
 }
