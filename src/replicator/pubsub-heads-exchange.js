@@ -20,6 +20,8 @@ export class PubsubHeadsExchange {
     this.topic = base32.encode(manifest.getTag())
     this._common = Monitor(this.pubsub, this.topic)
     this._directs = new Map()
+
+    this._heads = new Set()
   }
 
   async start () {
@@ -28,11 +30,14 @@ export class PubsubHeadsExchange {
 
     await this._common.start()
 
-    this.replica.events.on() // need to listen to the replica for head updates, on head update call broadcast
+    this.replica.events.on('update', this._onRepicaUpdate)
+    this.replica.events.on('write', this._onRepicaUpdate)
+
   }
 
   async stop () {
-    this.replica.events.removeListener() // remove replica listener
+    this.replica.events.removeListener('update', this._onReplicaUpdate)
+    this.replica.events.removeListener('write', this._onReplicaUpdate)
 
     this._common.removeListener('peer-join', this._onPeerJoin)
     this._common.removeListener('peer-leave', this._onPeerLeave)
@@ -53,11 +58,24 @@ export class PubsubHeadsExchange {
     }
   }
 
+  _onReplicaUpdate () {
+    const _heads = this._heads
+    this._heads = this.replica.heads
+
+    for (const head of this._heads) {
+      if (!_heads.has(head)) {
+        return this.broadcast(this._heads)
+      }
+    }
+
+    return false
+  }
+
   // may need to queue _onPeer* so start and stop arent called concurrently, or check for that in Direct
 
   _onPeerJoin (remotePeerId) {
     const direct = Direct(this.pubsub, this.peerId, remotePeerId)
-    this.directs.put(remotePeerId, direct)
+    this.directs.set(remotePeerId, direct)
     direct.start()
   }
 
