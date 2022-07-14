@@ -30,7 +30,7 @@ export class Direct {
     this.events = new EventEmitter()
     this.monitor = new Monitor(pubsub, this.topic)
 
-    this.handlerMap = new WeakMap()
+    this._handlerMap = new WeakMap()
     this._handlers = [] // exists just so we can still clean up subscriptions
     this.open = false
   }
@@ -79,14 +79,14 @@ export class Direct {
     }
 
     const _handler = (msg) => msg.from === this.remotePeerId && handler(msg)
-    this.handlerMap.set(handler, _handler)
+    this._handlerMap.set(handler, _handler)
 
     return this.pubsub.subscribe(this.topic, _handler)
   }
 
   async unsubscribe (handler) {
     const _handler = this._handlers.get(handler)
-    this.handlerMap.delete(handler)
+    this._handlerMap.delete(handler)
 
     return this.pubsub.unsubscribe(this.topic, _handler)
   }
