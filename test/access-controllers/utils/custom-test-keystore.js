@@ -1,5 +1,5 @@
-const EC = require('elliptic').ec
-const ec = new EC('secp256k1')
+import ecModule from 'elliptic'
+const ec = new ecModule.ec('secp256k1')
 
 /**
  * A custom keystore example
@@ -50,4 +50,4 @@ class CustomTestKeystore {
   }
 }
 
-module.exports = new CustomTestKeystore()
+export default (new CustomTestKeystore())
