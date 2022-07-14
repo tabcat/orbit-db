@@ -24,7 +24,7 @@ const dirs = root => Object.fromEntries([
 ].map(k => [k, path.join(root, k)]))
 
 // database factory
-export class OrbitDB {
+class OrbitDB {
   constructor (config) {
     this.directory = config.directory
     this.dirs = dirs(this.directory)
@@ -210,3 +210,5 @@ export class OrbitDB {
     return this._opening[address]
   }
 }
+
+export { OrbitDB }

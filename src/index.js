@@ -1,5 +1,5 @@
 
-import { OrbitDB as ODB } from './orbitdb.js'
+import { OrbitDB } from './orbitdb.js'
 
 import { LevelDatastore } from 'datastore-level'
 // import { KeyChain } from 'libp2p/src/keychain/index.js'
@@ -10,13 +10,18 @@ import { Entry } from './components/entry/index.js'
 import { Identity } from './components/identity/index.js'
 import { KeyValue } from './components/store/keyvalue.js'
 
-ODB.registry.access.add(StaticAccess)
-ODB.registry.entry.add(Entry)
-ODB.registry.identity.add(Identity)
-ODB.registry.store.add(KeyValue)
+import { createInstance } from './compat/create-instance.js';
 
-ODB.Storage = LevelDatastore
-// ODB.Keychain = KeyChain
-ODB.Replicator = Replicator
+OrbitDB.registry.access.add(StaticAccess)
+OrbitDB.registry.entry.add(Entry)
+OrbitDB.registry.identity.add(Identity)
+OrbitDB.registry.store.add(KeyValue)
 
-export const OrbitDB = ODB
+OrbitDB.Storage = LevelDatastore
+// OrbitDB.Keychain = KeyChain
+OrbitDB.Replicator = Replicator
+
+// Backwards Compatability
+OrbitDB.createInstance = createInstance
+
+export { OrbitDB }
