@@ -2,6 +2,8 @@
 import EventEmitter from 'events'
 import { Replica } from './replica.js'
 
+const typeMismatchWarn = (Component) => `${Component}.type does not match manifest.${Component.toLowerCase()}.type`
+
 export class Database {
   constructor (config) {
     this.storage = config.storage
@@ -42,29 +44,30 @@ export class Database {
   static async open (config) {
     const {
       orbitdb,
-      identity,
+      createStorage,
       manifest,
+      identity,
+      peerId,
+      pubsub
+      blocks,
       Store,
       Access,
       Replicator,
-      createStorage,
-      blocks,
       Identity,
-      peerId,
-      pubsub
     } = config
 
     if (identity.type !== Identity.type) {
       throw new Error('identity instance type does not match Identity class')
     }
 
-    const common = { manifest, createStorage, blocks }
+    const common = { manifest, blocks, createStorage }
 
-    const access = config.access = await Access.open({ ...common, orbitdb, Identity })
+    const access = config.access = await Access.open({ orbitdb, Identity, ...common })
     const replica = config.replica = await Replica.open({ ...common, access })
-
     config.store = await Store.open({ ...common, access, replica })
-    config.replicator = await Replicator.open({ ...common, access, replica, peerId, pubsub })
+
+    config.replicator = new Replicator({ peerId, pubsub, ...common, access, replica })
+    options.replicate && await config.replicator.start()
 
     const database = new Database(config)
 
@@ -86,11 +89,12 @@ export class Database {
     }
     this.open = false
 
+    await this.replicator.stop()
+
     this.store.events.removeListener('update', this._handlers.storeUpdate)
     this.replicator.events.removeListener('replicate', this._handlers.replicatorReplicate)
     this.replica.events.removeListener('write', this._handlers.replicaWrite)
 
-    await this.replicatior.close()
     await this.store.close()
     await this.replica.close()
     await this.access.close()
