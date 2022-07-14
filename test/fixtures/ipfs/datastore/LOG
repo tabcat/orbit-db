@@ -1,0 +1,22 @@
+2019/09/01-11:44:16.574088 7fd834d96700 Delete type=3 #200
+=============== Aug 23, 2020 (EDT) ===============
+16:43:51.705176 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+16:43:51.705287 version@stat F·[3 1] S·2KiB[672B 1KiB] Sc·[0.75 0.00]
+16:43:51.705294 db@open opening
+16:43:51.705327 journal@recovery F·1
+16:43:51.705780 journal@recovery recovering @202
+16:43:51.706358 memdb@flush created L0@203 N·4 S·1KiB "/F5..I75,v43":"/lo..ins,v45"
+16:43:51.706485 version@stat F·[4 1] S·4KiB[2KiB 1KiB] Sc·[1.00 0.00]
+16:43:51.707453 db@janitor F·7 G·0
+16:43:51.707465 db@open done T·2.16682ms
+16:43:51.707487 table@compaction L0·4 -> L1·1 S·4KiB Q·46
+16:43:51.707928 table@build created L1@206 N·8 S·3KiB "/F5..BTI,v2":"/lo..ins,v45"
+16:43:51.707950 version@stat F·[0 1] S·3KiB[0B 3KiB] Sc·[0.00 0.00]
+16:43:51.708244 table@compaction committed F-4 S-920B Ke·0 D·4 T·738.928µs
+16:43:51.708277 table@remove removed @203
+16:43:51.708299 table@remove removed @197
+16:43:51.708318 table@remove removed @192
+16:43:51.708333 table@remove removed @187
+16:43:51.708346 table@remove removed @183
+16:43:52.873827 db@close closing
+16:43:52.873856 db@close done T·28.208µs
