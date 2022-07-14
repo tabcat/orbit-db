@@ -1,7 +1,6 @@
 export async function createInstance (ipfs, legacyOpts) {
   const options = legacyOpts
-
-  // Fill in compat stuff here
+  options.ipfs = ipfs
 
   await this.create(options)
 }
