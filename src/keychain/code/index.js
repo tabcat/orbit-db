@@ -489,4 +489,3 @@ export class KeyChain {
         log('keychain reconstructed');
     }
 }
-//# sourceMappingURL=index.js.map

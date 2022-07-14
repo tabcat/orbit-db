@@ -17,7 +17,6 @@ export class Identity {
   constructor ({ name, priv, pub, block }) {
     this.name = name
     this.block = block
-    this.pub = pub
 
     if (priv) privs.set(this, priv)
   }
@@ -40,7 +39,7 @@ export class Identity {
       }
       const block = await Block.encode({ value, codec, hasher })
 
-      await identities.put(key, block)
+      await identities.put(key, block.bytes)
 
       const pem = await keypair.export(password)
       await keychain.importKey(block.cid.toString(), pem, password)
@@ -48,7 +47,7 @@ export class Identity {
 
     const bytes = await identities.get(key)
     const block = await Block.decode({ bytes, codec, hasher })
-    const pem = await keychain.findKeyByName(block.cid.toString())
+    const pem = await keychain.exportKey(block.cid.toString(), password)
     const keypair = await keys.import(pem, password)
 
     return new Identity({
