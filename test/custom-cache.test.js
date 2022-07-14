@@ -3,7 +3,7 @@
 import { strict as assert } from 'assert'
 import rmrf from 'rimraf'
 import path from 'path'
-import OrbitDB from '../src/index.js'
+import { OrbitDB } from '../src/index.js'
 import CustomCache from 'orbit-db-cache'
 import localdown from 'localstorage-down'
 import storageAdapter from 'orbit-db-storage-adapter'
@@ -19,7 +19,7 @@ import {
 
 import {
   databases
-} from './utils'
+} from './utils/index.js'
 
 const dbPath = './orbitdb/tests/customKeystore'
 

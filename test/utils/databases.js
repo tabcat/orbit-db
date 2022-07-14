@@ -1,4 +1,4 @@
-export const databases = [
+export default [
   {
     type: 'eventlog',
     create: (orbitdb, name, options) => orbitdb.eventlog(name, options),
