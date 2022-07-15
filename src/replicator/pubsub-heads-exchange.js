@@ -74,7 +74,7 @@ export class PubsubHeadsExchange {
     return false
   }
 
-  _onHeadsMessage (msg) {
+  async _onHeadsMessage (msg) {
     const { data: bytes } = msg
     const { value: cids } = await Block.decode({ bytes, codec, hasher })
 

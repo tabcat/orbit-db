@@ -48,12 +48,12 @@ export class Database {
       manifest,
       identity,
       peerId,
-      pubsub
+      pubsub,
       blocks,
       Store,
       Access,
       Replicator,
-      Identity,
+      Identity
     } = config
 
     if (identity.type !== Identity.type) {
