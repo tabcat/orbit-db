@@ -40,7 +40,8 @@ export function traverser ({
 
   const source = pushable()
 
-  // const order = cids => ordered ? walk(cids) : cids.forEach(cid => walk([cid]))
+  // ordered vs parallel
+  const order = cids => ordered ? walk(cids) : Promise.all(cids.map(cid => walk([cid])))
 
   async function walk (cids) {
     // trivial abort for now; later pass abort to load function
@@ -64,9 +65,7 @@ export function traverser ({
     }
   }
 
-  // no parallel traversal for now
-  walk(cids).then(() => source.end())
-  // order(cids).then(() => source.end()) // todo: eliminate order function, move logic into walk
+  order(cids).then(() => source.end()) // todo: eliminate order function, move logic into walk
 
   return source
 }
